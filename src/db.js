@@ -1,18 +1,22 @@
 import "dotenv/config";
 import pg from "pg";
 
-const host = (process.env.PGHOST || "").trim();
-const user = (process.env.PGUSER || "").trim();
-const password = String(process.env.PGPASSWORD || ""); // fuerza string SIEMPRE
+const { Pool } = pg;
 
+const useDatabaseUrl = !!process.env.DATABASE_URL;
 
-const isRenderExternal = host.endsWith(".render.com") || host.includes("render.com");
-
-export const pool = new pg.Pool({
-  host,
-  port: Number(process.env.PGPORT || 5432),
-  database: (process.env.PGDATABASE || "").trim(),
-  user,
-  password,
-  ssl: isRenderExternal ? { rejectUnauthorized: false } : false,
-});
+export const pool = new Pool(
+  useDatabaseUrl
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      }
+    : {
+        host: process.env.PGHOST,
+        port: Number(process.env.PGPORT || 5432),
+        database: process.env.PGDATABASE,
+        user: process.env.PGUSER,
+        password: String(process.env.PGPASSWORD || ""),
+        ssl: { rejectUnauthorized: false }, // SIEMPRE SSL en Render
+      }
+);
